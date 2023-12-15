@@ -52,11 +52,12 @@ public class BookSellerAgent extends Agent {
   }
 
   //invoked from GUI, when a new book is added to the catalogue
-  public void updateCatalogue(final String title, final int price) {
+  public void updateCatalogue(final String title, final int price, final int shippingCost) {
     addBehaviour(new OneShotBehaviour() {
       public void action() {
-		catalogue.put(title, new Integer(price));
-		System.out.println(getAID().getLocalName() + ": " + title + " put into the catalogue. Price = " + price);
+		  int totalCost = price + shippingCost;
+		catalogue.put(title, Integer.valueOf(totalCost));
+		System.out.println(getAID().getLocalName() + ": " + title + " put into the catalogue. Price = " + price + ". Shipping cost = " + shippingCost);
       }
     } );
   }
