@@ -13,6 +13,8 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 public class BookBuyerAgent extends Agent {
   private BookBuyerGui myGui;
   private String targetBookTitle;
+
+  private int budget = 50;
   
   //list of found sellers
   private AID[] sellerAgents;
@@ -128,24 +130,35 @@ public class BookBuyerAgent extends Agent {
 	      break;
 	    case 2:
 	      //best proposal consumption - purchase
-	      ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
-          order.addReceiver(bestSeller);
-	      order.setContent(targetBookTitle);
-	      order.setConversationId("book-trade");
-	      order.setReplyWith("order"+System.currentTimeMillis());
-	      myAgent.send(order);
-	      mt = MessageTemplate.and(MessageTemplate.MatchConversationId("book-trade"),
-	                               MessageTemplate.MatchInReplyTo(order.getReplyWith()));
-	      step = 3;
-	      break;
-	    case 3:      
+			if(bestPrice <= budget){
+				ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
+				order.addReceiver(bestSeller);
+				order.setContent(targetBookTitle);
+				order.setConversationId("book-trade");
+				order.setReplyWith("order"+System.currentTimeMillis());
+				myAgent.send(order);
+				mt = MessageTemplate.and(MessageTemplate.MatchConversationId("book-trade"),
+						MessageTemplate.MatchInReplyTo(order.getReplyWith()));
+				step = 3;
+				break;
+
+			}else{
+				System.out.println("Buyer budget is too low which is: " + budget);
+				System.out.println(getAID().getLocalName() + ": " + targetBookTitle + " price is too high for your budget.");
+
+				step=4;
+				break;
+			}
+	    case 3:
 	      //seller confirms the transaction
 	      reply = myAgent.receive(mt);
 	      if (reply != null) {
 	        if (reply.getPerformative() == ACLMessage.INFORM) {
+				System.out.println("DEBUG: We enter case 3 THE STEP: " + step);
 	          //purchase succeeded
 	          System.out.println(getAID().getLocalName() + ": " + targetBookTitle + " purchased for " + bestPrice + " from " + reply.getSender().getLocalName());
 		  System.out.println(getAID().getLocalName() + ": waiting for the next purchase order.");
+		  budget = budget - bestPrice;
 		  targetBookTitle = "";
 	          //myAgent.doDelete();
 	        }
@@ -166,7 +179,7 @@ public class BookBuyerAgent extends Agent {
 	  		System.out.println(getAID().getLocalName() + ": " + targetBookTitle + " is not on sale.");
 	  	}
 	    //process terminates here if purchase has failed (title not on sale) or book was successfully bought 
-	    return ((step == 2 && bestSeller == null) || step == 4);
+	    return ((step == 4 && bestSeller == null) || step == 4);
 	  }
 	}
 
