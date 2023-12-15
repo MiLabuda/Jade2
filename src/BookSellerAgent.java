@@ -75,13 +75,15 @@ public class BookSellerAgent extends Agent {
 	        //title found in the catalogue, respond with its price as a proposal
 	        reply.setPerformative(ACLMessage.PROPOSE);
 	        reply.setContent(String.valueOf(price.intValue()));
-	      }
+			  myAgent.send(reply);
+
+		  }
 	      else {
 	        //title not found in the catalogue
 	        reply.setPerformative(ACLMessage.REFUSE);
 	        reply.setContent("not-available");
 	      }
-	      myAgent.send(reply);
+//	      myAgent.send(reply);
 	    }
 	    else {
 	      block();

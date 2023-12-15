@@ -15,6 +15,8 @@ public class BookBuyerAgent extends Agent {
   private String targetBookTitle;
 
   private int budget = 50;
+
+  private int iterator = 0;
   
   //list of found sellers
   private AID[] sellerAgents;
@@ -58,7 +60,7 @@ public class BookBuyerAgent extends Agent {
 					  fe.printStackTrace();
 				  }
 
-				  myAgent.addBehaviour(new RequestPerformer());
+                  myAgent.addBehaviour(new RequestPerformer());
 			  }
 		  }
 	  });
@@ -105,29 +107,45 @@ public class BookBuyerAgent extends Agent {
 	                               MessageTemplate.MatchInReplyTo(cfp.getReplyWith()));
 	      step = 1;
 	      break;
-	    case 1:
-	      //collect proposals
-	      ACLMessage reply = myAgent.receive(mt);
-	      if (reply != null) {
-	        if (reply.getPerformative() == ACLMessage.PROPOSE) {
-	          //proposal received
-	          int price = Integer.parseInt(reply.getContent());
-	          if (bestSeller == null || price < bestPrice) {
-	            //the best proposal as for now
-	            bestPrice = price;
-	            bestSeller = reply.getSender();
-	          }
-	        }
-	        repliesCnt++;
-	        if (repliesCnt >= sellerAgents.length) {
-	          //all proposals have been received
-	          step = 2; 
-	        }
-	      }
-	      else {
-	        block();
-	      }
-	      break;
+			case 1:
+
+				// Collect proposals
+				ACLMessage reply = myAgent.receive(mt);
+				if (reply != null) {
+					if (reply.getPerformative() == ACLMessage.PROPOSE) {
+						// Proposal received
+						int price = Integer.parseInt(reply.getContent());
+						if (bestSeller == null || price < bestPrice) {
+							// The best proposal as for now
+							bestPrice = price;
+							bestSeller = reply.getSender();
+						}
+					} else if (reply.getPerformative() == ACLMessage.REFUSE) {
+						// Seller refused the proposal
+						System.out.println(getAID().getLocalName() + ": Seller " + reply.getSender().getLocalName() + " refused the proposal.");
+					}
+
+					repliesCnt++;
+					if (repliesCnt >= sellerAgents.length) {
+						// All proposals have been received
+						step = 2;
+						break;
+					}
+				} else {
+					System.out.println("Iteration: " + iterator);
+
+					// Check if enough time has passed to consider the responses
+					if (iterator > 5){
+						System.out.println(getAID().getLocalName() + ": Not all sellers responded within the maximum wait time.");
+						iterator = 0;
+						step = 2;
+						break;
+					} else {
+						iterator = iterator+1;
+						block();
+					}
+				}
+				break;
 	    case 2:
 	      //best proposal consumption - purchase
 			if(bestPrice <= budget){
@@ -154,7 +172,6 @@ public class BookBuyerAgent extends Agent {
 	      reply = myAgent.receive(mt);
 	      if (reply != null) {
 	        if (reply.getPerformative() == ACLMessage.INFORM) {
-				System.out.println("DEBUG: We enter case 3 THE STEP: " + step);
 	          //purchase succeeded
 	          System.out.println(getAID().getLocalName() + ": " + targetBookTitle + " purchased for " + bestPrice + " from " + reply.getSender().getLocalName());
 		  System.out.println(getAID().getLocalName() + ": waiting for the next purchase order.");
