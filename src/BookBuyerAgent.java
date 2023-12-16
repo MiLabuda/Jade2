@@ -16,7 +16,7 @@ public class BookBuyerAgent extends Agent {
 
   private int budget = 50;
 
-  private int iterator = 0;
+  private long startTime, endTime, timeInterval;
   
   //list of found sellers
   private AID[] sellerAgents;
@@ -95,6 +95,8 @@ public class BookBuyerAgent extends Agent {
 	    switch (step) {
 	    case 0:
 	      //call for proposal (CFP) to found sellers
+			startTime = System.currentTimeMillis();
+
 	      ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
 	      for (int i = 0; i < sellerAgents.length; ++i) {
 	        cfp.addReceiver(sellerAgents[i]);
@@ -108,6 +110,9 @@ public class BookBuyerAgent extends Agent {
 	      step = 1;
 	      break;
 			case 1:
+
+				endTime = System.currentTimeMillis();
+				timeInterval = endTime - startTime;
 
 				// Collect proposals
 				ACLMessage reply = myAgent.receive(mt);
@@ -129,20 +134,15 @@ public class BookBuyerAgent extends Agent {
 					if (repliesCnt >= sellerAgents.length) {
 						// All proposals have been received
 						step = 2;
-						break;
 					}
 				} else {
-					System.out.println("Iteration: " + iterator);
 
 					// Check if enough time has passed to consider the responses
-					if (iterator > 5){
+					if (timeInterval > 10000){
 						System.out.println(getAID().getLocalName() + ": Not all sellers responded within the maximum wait time.");
-						iterator = 0;
 						step = 2;
-						break;
 					} else {
-						iterator = iterator+1;
-						block();
+						block(10000);
 					}
 				}
 				break;
